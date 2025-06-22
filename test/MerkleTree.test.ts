@@ -42,7 +42,9 @@ describe("MerkleTree", function () {
 
       expect(result).to.be.equal(mark);
     });
+  });
 
+  describe("Merkle tree", async () => {
     it("hashes calculating in constructor", async () => {
       const testHashes: string[] = [];
 

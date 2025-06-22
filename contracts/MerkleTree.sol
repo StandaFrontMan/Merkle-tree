@@ -5,7 +5,10 @@ pragma solidity ^0.8.28;
 // import "hardhat/console.sol";
 
 contract MerkleTree {
-  // H1 H2 H3 H4
+
+  //   H1-H2      H3-H4
+  // H1    H2   H3    H4
+
   // TX1 TX2 TX3 TX4
   bytes32[] public hashes;
   string[4] transactions = [
@@ -18,6 +21,22 @@ contract MerkleTree {
   constructor () {
     for (uint i = 0; i < transactions.length; i++) {
       hashes.push(makeHash(transactions[i]));
+    }
+
+    uint count = transactions.length;
+    uint offset = 0;
+
+    while(count > 0) {
+
+      for (uint i = 0; i < count - 1; i += 2) {
+        hashes.push(keccak256(
+          abi.encodePacked(
+            hashes[offset + i], hashes[offset + i + 1]
+          )
+        ));
+      }
+      offset += count;
+      count = count / 2;
     }
   }
 
