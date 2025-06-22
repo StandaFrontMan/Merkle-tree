@@ -1,6 +1,6 @@
 import chai, { expect, should } from "chai";
 import { ethers } from "hardhat";
-import { Signer } from "ethers";
+import { keccak256, Signer, solidityPackedKeccak256 } from "ethers";
 
 import { MerkleTree } from "../typechain-types";
 
@@ -58,6 +58,89 @@ describe("MerkleTree", function () {
         const contractHash = await ct.hashes(i);
         expect(contractHash).to.equal(testHashes[i]);
       }
+    });
+
+    it("Should correctly compute intermediate hashes", async () => {
+      // string => keccak256 hash
+      const leafHashes: string[] = [];
+      for (let i = 0; i < transactions.length; i++) {
+        const leaf = ethers.solidityPackedKeccak256(
+          ["string"],
+          [transactions[i]]
+        );
+
+        leafHashes.push(leaf);
+      }
+
+      // intermediate hashes
+      const intermediateHashes: string[] = [];
+      for (let i = 0; i < leafHashes.length; i += 2) {
+        const intermediateHash = ethers.keccak256(
+          ethers.concat([leafHashes[i], leafHashes[i + 1]])
+        );
+
+        intermediateHashes.push(intermediateHash);
+      }
+
+      // ct hashes
+      const ctHashes = await Promise.all(
+        transactions.map((_, i) => ct.hashes(i))
+      );
+
+      // leafHashes[i] === ctHashes[i]
+      for (let i = 0; i < leafHashes.length; i++) {
+        expect(leafHashes[i]).to.equal(ctHashes[i]);
+      }
+
+      // ct intermediate hashes
+      const ctIntermediateHashes = await Promise.all(
+        intermediateHashes.map((_, i) => ct.hashes(transactions.length + i))
+      );
+
+      // intermediateHashes[i] === ctIntermediateHashes[i]
+      for (let i = 0; i < intermediateHashes.length; i++) {
+        expect(intermediateHashes[i]).to.equal(ctIntermediateHashes[i]);
+      }
+    });
+
+    it("Should correctly compute the Merkle root", async () => {
+      const testHashes: string[] = [];
+
+      for (let i = 0; i < transactions.length; i++) {
+        const computeHash = solidityPackedKeccak256(
+          ["string"],
+          [transactions[i]]
+        );
+
+        testHashes.push(computeHash);
+      }
+
+      let count = transactions.length;
+      let offset = 0;
+
+      while (count > 0) {
+        for (let i = 0; i < count - 1; i += 2) {
+          testHashes.push(
+            ethers.keccak256(
+              ethers.concat([
+                testHashes[offset + i],
+                testHashes[offset + i + 1],
+              ])
+            )
+          );
+        }
+
+        offset += count;
+        count = count / 2;
+      }
+
+      const ctHashes = await Promise.all(
+        testHashes.map((_, i) => ct.hashes(i))
+      );
+
+      expect(testHashes[testHashes.length - 1]).to.equal(
+        ctHashes[ctHashes.length - 1]
+      );
     });
   });
 });
