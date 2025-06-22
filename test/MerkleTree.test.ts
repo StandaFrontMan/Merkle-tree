@@ -142,5 +142,19 @@ describe("MerkleTree", function () {
         ctHashes[ctHashes.length - 1]
       );
     });
+
+    it("hashes arr has 2n-1 amount of hashes", async () => {
+      /**
+       * @notice 2n - 1
+       * @param {n} number transactions
+       */
+      const totalHashes = 2 * transactions.length - 1;
+
+      const ctHashes = await Promise.all(
+        Array.from({ length: totalHashes }, (_, i) => ct.hashes(i))
+      );
+
+      expect(ctHashes.length).to.be.equal(totalHashes);
+    });
   });
 });
