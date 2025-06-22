@@ -42,5 +42,20 @@ describe("MerkleTree", function () {
 
       expect(result).to.be.equal(mark);
     });
+
+    it("hashes calculating in constructor", async () => {
+      const testHashes: string[] = [];
+
+      for (let i = 0; i < transactions.length; i++) {
+        testHashes.push(
+          ethers.solidityPackedKeccak256(["string"], [transactions[i]])
+        );
+      }
+
+      for (let i = 0; i < testHashes.length; i++) {
+        const contractHash = await ct.hashes(i);
+        expect(contractHash).to.equal(testHashes[i]);
+      }
+    });
   });
 });

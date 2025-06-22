@@ -15,6 +15,12 @@ contract MerkleTree {
     "TX4: Elisabeth => Jovana"
   ];
 
+  constructor () {
+    for (uint i = 0; i < transactions.length; i++) {
+      hashes.push(makeHash(transactions[i]));
+    }
+  }
+
   function abiEncode(string memory input) public pure returns(bytes memory) {
     return abi.encodePacked(input);
   }
